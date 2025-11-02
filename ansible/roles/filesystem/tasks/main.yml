@@ -1,0 +1,9 @@
+---
+# Filesystem Hardening Tasks
+# Purpose: Configure filesystem permissions and mount options per CIS
+
+# Implementation will be added after research phase
+
+- name: Placeholder - Filesystem hardening
+  debug:
+    msg: "Filesystem hardening tasks will be implemented here"

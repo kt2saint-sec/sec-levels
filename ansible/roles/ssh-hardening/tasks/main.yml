@@ -1,0 +1,9 @@
+---
+# SSH Hardening Tasks
+# Purpose: Harden SSH configuration according to CIS benchmarks
+
+# Implementation will be added after research phase
+
+- name: Placeholder - SSH hardening
+  debug:
+    msg: "SSH hardening tasks will be implemented here"

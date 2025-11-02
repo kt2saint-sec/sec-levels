@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  test-kernel68:
+    build:
+      context: .
+      dockerfile: Dockerfile.kernel68
+    container_name: sec-levels-test-68
+    hostname: sec-levels-68
+    privileged: true  # Required for systemd and security testing
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+    security_opt:
+      - apparmor=docker-default
+      - seccomp=unconfined  # Required for security modification testing
+    volumes:
+      - ../scripts:/scripts:ro
+      - ../ansible:/ansible:ro
+      - ../config:/config:ro
+      - ../reports:/reports:rw
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    networks:
+      - test-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "systemctl", "is-active", "ssh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  test-latest:
+    build:
+      context: .
+      dockerfile: Dockerfile.latest
+    container_name: sec-levels-test-latest
+    hostname: sec-levels-latest
+    privileged: true
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+    security_opt:
+      - apparmor=docker-default
+      - seccomp=unconfined
+    volumes:
+      - ../scripts:/scripts:ro
+      - ../ansible:/ansible:ro
+      - ../config:/config:ro
+      - ../reports:/reports:rw
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    networks:
+      - test-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "systemctl", "is-active", "ssh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  test-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/24

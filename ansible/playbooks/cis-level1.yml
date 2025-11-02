@@ -1,0 +1,24 @@
+---
+# CIS Level 1 Server Hardening Playbook
+# Purpose: Apply CIS Level 1 benchmarks to Ubuntu 24.04 LTS
+# Author: sec-levels Development Team
+
+- name: Apply CIS Level 1 Hardening
+  hosts: all
+  become: yes
+
+  vars:
+    cis_level: 1
+
+  tasks:
+    # Implementation will be added after research phase
+    - name: Placeholder - CIS Level 1 hardening
+      debug:
+        msg: "CIS Level 1 hardening tasks will be implemented here"
+
+  roles:
+    # - ssh-hardening
+    # - firewall
+    # - kernel-hardening
+    # - filesystem
+    # - audit-logging

@@ -1,0 +1,14 @@
+---
+# CIS Level 1 Server Profile
+# Purpose: Define CIS Level 1 benchmark controls
+# Author: sec-levels Development Team
+
+# Implementation will be added after research phase
+
+profile:
+  name: "CIS Level 1 Server"
+  description: "Basic server hardening for Ubuntu 24.04 LTS"
+  level: 1
+
+controls:
+  # Controls will be populated from CIS benchmark research

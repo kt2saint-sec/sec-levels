@@ -1,0 +1,49 @@
+# Logs
+*.log
+*.swp
+*.swo
+*~
+
+# Virtual environments
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Reports (may contain sensitive data)
+reports/*.html
+reports/*.xml
+reports/*.json
+!reports/samples/
+
+# Secrets
+*.key
+*.pem
+*.crt
+secrets/
+.env
+.env.local
+
+# Backups
+backups/
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Ansible
+*.retry
+.ansible/
+
+# Docker
+.dockerignore
+
+# Test artifacts
+test-results/
+coverage/

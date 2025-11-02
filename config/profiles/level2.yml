@@ -1,0 +1,14 @@
+---
+# CIS Level 2 Server Profile
+# Purpose: Define CIS Level 2 benchmark controls
+# Author: sec-levels Development Team
+
+# Implementation will be added after research phase
+
+profile:
+  name: "CIS Level 2 Server"
+  description: "Advanced server hardening for Ubuntu 24.04 LTS"
+  level: 2
+
+controls:
+  # Controls will be populated from CIS benchmark research

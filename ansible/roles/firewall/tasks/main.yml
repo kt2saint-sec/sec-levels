@@ -1,0 +1,9 @@
+---
+# Firewall Configuration Tasks
+# Purpose: Configure UFW firewall according to CIS benchmarks
+
+# Implementation will be added after research phase
+
+- name: Placeholder - Firewall configuration
+  debug:
+    msg: "Firewall configuration tasks will be implemented here"

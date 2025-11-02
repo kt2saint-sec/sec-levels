@@ -1,0 +1,5 @@
+---
+# Kernel Hardening Default Variables
+
+# Implementation will be added after research phase
+kernel_parameters: {}

@@ -1,0 +1,9 @@
+---
+# Kernel Hardening Tasks
+# Purpose: Apply kernel parameter hardening according to CIS benchmarks
+
+# Implementation will be added after research phase
+
+- name: Placeholder - Kernel hardening
+  debug:
+    msg: "Kernel hardening tasks will be implemented here"

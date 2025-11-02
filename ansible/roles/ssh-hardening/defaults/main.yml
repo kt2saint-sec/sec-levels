@@ -1,0 +1,7 @@
+---
+# SSH Hardening Default Variables
+
+# Implementation will be added after research phase
+ssh_port: 22
+ssh_permit_root_login: "no"
+ssh_password_authentication: "no"
