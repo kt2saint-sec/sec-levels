@@ -1,0 +1,28 @@
+---
+# SSH Hardening Default Variables
+# Based on CIS Ubuntu 24.04 LTS Benchmark v1.0.0
+
+# Basic SSH settings
+ssh_permit_root_login: "no"
+ssh_password_authentication: "no"
+ssh_max_auth_tries: 3
+ssh_client_alive_interval: 300
+ssh_client_alive_count_max: 0
+
+# Strong cryptography (CIS 5.1.11-5.1.13)
+# Based on MVladislav ansible-cis-ubuntu-2404 research
+ssh_ciphers:
+  - aes256-gcm@openssh.com
+  - aes128-gcm@openssh.com
+  - aes256-ctr
+
+ssh_macs:
+  - hmac-sha2-512
+  - hmac-sha2-256
+  - umac-128@openssh.com
+
+ssh_kex_algorithms:
+  - curve25519-sha256@libssh.org
+  - ecdh-sha2-nistp521
+  - ecdh-sha2-nistp384
+  - diffie-hellman-group-exchange-sha256

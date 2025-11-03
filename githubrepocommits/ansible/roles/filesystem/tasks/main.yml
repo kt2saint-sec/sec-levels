@@ -1,0 +1,103 @@
+---
+# Filesystem Hardening - CIS Controls
+# Based on CIS Ubuntu 24.04 LTS Benchmark v1.0.0
+# Section 7: System Maintenance
+
+- name: Ensure /tmp is configured with secure mount options
+  mount:
+    path: /tmp
+    src: tmpfs
+    fstype: tmpfs
+    opts: defaults,rw,nosuid,nodev,noexec,relatime
+    state: mounted
+  when:
+    - ansible_virtualization_type != "docker"
+    - configure_tmp_partition | default(false)
+  tags: filesystem
+
+- name: Set restrictive permissions on critical system files (CIS 7.1)
+  file:
+    path: "{{ item.path }}"
+    owner: root
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: '/etc/passwd', group: 'root', mode: '0644' }
+    - { path: '/etc/group', group: 'root', mode: '0644' }
+    - { path: '/etc/shadow', group: 'shadow', mode: '0640' }
+    - { path: '/etc/gshadow', group: 'shadow', mode: '0640' }
+  tags: filesystem
+
+- name: Set permissions on /etc/passwd- backup files
+  file:
+    path: "{{ item.path }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: '/etc/passwd-', mode: '0644' }
+    - { path: '/etc/group-', mode: '0644' }
+    - { path: '/etc/shadow-', mode: '0640' }
+    - { path: '/etc/gshadow-', mode: '0640' }
+  failed_when: false
+  tags: filesystem
+
+- name: Check if grub.cfg exists
+  stat:
+    path: /boot/grub/grub.cfg
+  register: grub_cfg
+  when: ansible_virtualization_type != "docker"
+  tags: filesystem
+
+- name: Set permissions on GRUB configuration (CIS 1.4.1)
+  file:
+    path: /boot/grub/grub.cfg
+    owner: root
+    group: root
+    mode: '0600'
+  when:
+    - ansible_virtualization_type != "docker"
+    - grub_cfg.stat.exists | default(false)
+  tags: filesystem
+
+- name: Find world-writable files (audit only)
+  shell: |
+    find / -xdev -type f -perm -0002 2>/dev/null | head -20
+  register: world_writable_files
+  changed_when: false
+  failed_when: false
+  when: ansible_virtualization_type != "docker"
+  tags: filesystem
+
+- name: Display world-writable files found
+  debug:
+    msg: "{{ world_writable_files.stdout_lines | default([]) }}"
+  when:
+    - ansible_virtualization_type != "docker"
+    - world_writable_files.stdout_lines | default([]) | length > 0
+  tags: filesystem
+
+- name: Find unowned files (audit only)
+  shell: |
+    find / -xdev -nouser -o -nogroup 2>/dev/null | head -20
+  register: unowned_files
+  changed_when: false
+  failed_when: false
+  when: ansible_virtualization_type != "docker"
+  tags: filesystem
+
+- name: Display unowned files found
+  debug:
+    msg: "{{ unowned_files.stdout_lines | default([]) }}"
+  when:
+    - ansible_virtualization_type != "docker"
+    - unowned_files.stdout_lines | default([]) | length > 0
+  tags: filesystem
+
+- name: Set sticky bit on world-writable directories
+  shell: |
+    df --local -P | awk '{if (NR!=1) print $6}' | xargs -I '{}' find '{}' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) -exec chmod a+t '{}' \;
+  changed_when: false
+  failed_when: false
+  when: ansible_virtualization_type != "docker"
+  tags: filesystem

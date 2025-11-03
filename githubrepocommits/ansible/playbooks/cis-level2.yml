@@ -1,0 +1,139 @@
+---
+# CIS Level 2 Server Hardening Playbook
+# Purpose: Apply CIS Level 2 benchmarks to Ubuntu 24.04 LTS
+# Based on CIS Ubuntu Linux 24.04 LTS Benchmark v1.0.0
+# Author: sec-levels Development Team
+#
+# Note: Level 2 extends Level 1 with additional security controls
+# Level 2 is intended for high-security environments
+
+- name: CIS Level 2 Server Hardening - Ubuntu 24.04 LTS
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    # Level 2 specific overrides
+    kernel_kexec_disabled: 1     # Disable kexec for Level 2
+    configure_tmp_partition: false  # Set to true if dedicated /tmp partition exists
+
+  pre_tasks:
+    - name: Display target information
+      debug:
+        msg: |
+          ========================================
+          CIS Level 2 Hardening (Includes Level 1)
+          ========================================
+          Target: {{ ansible_hostname }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Kernel: {{ ansible_kernel }}
+          Virtualization: {{ ansible_virtualization_type | default('physical') }}
+          Architecture: {{ ansible_architecture }}
+
+          WARNING: Level 2 applies stricter security controls
+          Ensure you have console access before proceeding
+          ========================================
+
+    - name: Verify Ubuntu 24.04
+      assert:
+        that:
+          - ansible_distribution == "Ubuntu"
+          - ansible_distribution_version == "24.04"
+        fail_msg: "This playbook requires Ubuntu 24.04 LTS"
+        success_msg: "Ubuntu 24.04 LTS detected - proceeding with Level 2 hardening"
+
+    - name: Create backup directory
+      file:
+        path: /root/sec-levels-backups
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Backup critical files before hardening
+      shell: |
+        tar -czf /root/sec-levels-backups/pre-level2-hardening-{{ ansible_date_time.epoch }}.tar.gz \
+          /etc/ssh/sshd_config \
+          /etc/sysctl.conf \
+          /etc/sysctl.d/ \
+          /etc/audit/ \
+          /etc/apparmor.d/ 2>/dev/null || true
+      changed_when: false
+
+  roles:
+    # Include all Level 1 roles with Level 2 tags
+    - role: ssh-hardening
+      tags: ['ssh', 'level1', 'level2']
+
+    - role: firewall
+      tags: ['firewall', 'level1', 'level2']
+
+    - role: kernel-hardening
+      tags: ['kernel', 'level1', 'level2']
+
+    - role: filesystem
+      tags: ['filesystem', 'level1', 'level2']
+
+    - role: audit-logging
+      tags: ['audit', 'level1', 'level2']
+
+  tasks:
+    # Level 2 specific tasks (beyond Level 1)
+    - name: Ensure AppArmor is installed (CIS 1.3.1)
+      apt:
+        name:
+          - apparmor
+          - apparmor-utils
+        state: present
+        update_cache: yes
+      when: ansible_virtualization_type != "docker"
+      tags: ['level2', 'apparmor']
+
+    - name: Ensure AppArmor is enabled (CIS 1.3.2)
+      service:
+        name: apparmor
+        enabled: yes
+        state: started
+      when: ansible_virtualization_type != "docker"
+      tags: ['level2', 'apparmor']
+
+    - name: Set all AppArmor profiles to enforce mode (CIS 1.3.3)
+      shell: |
+        aa-enforce /etc/apparmor.d/* 2>/dev/null || true
+      changed_when: false
+      failed_when: false
+      when: ansible_virtualization_type != "docker"
+      tags: ['level2', 'apparmor']
+
+  post_tasks:
+    - name: Display Level 2 hardening summary
+      debug:
+        msg: |
+          ========================================
+          CIS Level 2 Hardening Complete
+          ========================================
+          Target: {{ ansible_hostname }}
+          Timestamp: {{ ansible_date_time.iso8601 }}
+
+          Applied Controls (Level 1 + Level 2):
+          - All Level 1 controls
+          - SSH hardening (CIS 5.1)
+          - UFW firewall configuration (CIS 4)
+          - Kernel parameter hardening (CIS 1.5, 3.3)
+          - Filesystem permissions (CIS 7)
+          - Audit logging (CIS 6.2)
+          - AppArmor mandatory access control (CIS 1.3)
+          - Enhanced kernel restrictions (kexec disabled)
+
+          Backups stored in: /root/sec-levels-backups/
+
+          Next Steps:
+          1. CRITICAL: Verify SSH access works (open new connection)
+          2. Test critical services and applications
+          3. Review AppArmor profiles in enforcing mode
+          4. Run audit script: ~/sec-levels/scripts/audit.sh level2
+          5. Review audit report in ~/sec-levels/reports/
+          6. Monitor logs for AppArmor denials: journalctl -xe | grep -i apparmor
+
+          ========================================
+      tags: always

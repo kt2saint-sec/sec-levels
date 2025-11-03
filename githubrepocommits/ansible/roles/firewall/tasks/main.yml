@@ -1,0 +1,81 @@
+---
+# UFW Firewall Configuration - CIS Controls
+# Based on CIS Ubuntu 24.04 LTS Benchmark v1.0.0
+# Section 4: Firewall Configuration
+
+- name: Install UFW
+  apt:
+    name: ufw
+    state: present
+    update_cache: yes
+  when: ansible_virtualization_type != "docker"
+  tags: firewall
+
+- name: Reset UFW to defaults
+  ufw:
+    state: reset
+  when: ansible_virtualization_type != "docker"
+  tags: firewall
+
+- name: Configure UFW default policies (CIS 4.2.1)
+  ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: 'incoming', policy: 'deny' }
+    - { direction: 'outgoing', policy: 'allow' }
+    - { direction: 'routed', policy: 'deny' }
+  when: ansible_virtualization_type != "docker"
+  tags: firewall
+
+- name: Allow SSH (port 22) before enabling firewall
+  ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
+    comment: 'SSH access'
+  when: ansible_virtualization_type != "docker"
+  tags: firewall
+
+- name: Allow additional ports if defined
+  ufw:
+    rule: allow
+    port: "{{ item.port }}"
+    proto: "{{ item.proto | default('tcp') }}"
+    comment: "{{ item.comment | default('Custom rule') }}"
+  loop: "{{ ufw_additional_rules | default([]) }}"
+  when: ansible_virtualization_type != "docker"
+  tags: firewall
+
+- name: Enable UFW logging (CIS 4.2.4)
+  ufw:
+    logging: 'on'
+  when: ansible_virtualization_type != "docker"
+  tags: firewall
+
+- name: Enable UFW (CIS 4.2.2)
+  ufw:
+    state: enabled
+  when: ansible_virtualization_type != "docker"
+  tags: firewall
+
+- name: Verify UFW status
+  command: ufw status verbose
+  register: ufw_status
+  changed_when: false
+  when: ansible_virtualization_type != "docker"
+  tags: firewall
+
+- name: Display UFW status
+  debug:
+    var: ufw_status.stdout_lines
+  when:
+    - ansible_virtualization_type != "docker"
+    - ufw_status is defined
+  tags: firewall
+
+- name: Docker environment - Skip firewall configuration
+  debug:
+    msg: "Skipping UFW configuration in Docker container (not applicable)"
+  when: ansible_virtualization_type == "docker"
+  tags: firewall

@@ -1,0 +1,8 @@
+---
+# Audit Logging Default Variables
+# Based on CIS Ubuntu 24.04 LTS Benchmark v1.0.0
+
+# Auditd configuration settings
+auditd_max_log_file: 8          # Maximum log file size in MB
+auditd_space_left_action: email # Action when space is low (email, syslog, suspend, etc.)
+auditd_max_log_file_action: keep_logs  # Action when max_log_file reached (rotate, keep_logs, etc.)

@@ -1,0 +1,8 @@
+---
+# SSH Hardening Handlers
+
+- name: restart ssh
+  service:
+    name: ssh
+    state: restarted
+  when: ansible_virtualization_type != "docker"

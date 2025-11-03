@@ -1,0 +1,102 @@
+---
+# Audit Logging Configuration - CIS Controls
+# Based on CIS Ubuntu 24.04 LTS Benchmark v1.0.0
+# Section 6.2: Audit Logging
+
+- name: Install auditd
+  apt:
+    name:
+      - auditd
+      - audispd-plugins
+    state: present
+    update_cache: yes
+  when: ansible_virtualization_type != "docker"
+  tags: audit
+
+- name: Create audit rules directory
+  file:
+    path: /etc/audit/rules.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0750'
+  when: ansible_virtualization_type != "docker"
+  tags: audit
+
+- name: Configure auditd rules
+  template:
+    src: audit.rules.j2
+    dest: /etc/audit/rules.d/cis.rules
+    owner: root
+    group: root
+    mode: '0640'
+  notify: restart auditd
+  when: ansible_virtualization_type != "docker"
+  tags: audit
+
+- name: Configure auditd.conf max_log_file
+  lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: '^max_log_file\s*='
+    line: 'max_log_file = {{ auditd_max_log_file }}'
+    state: present
+  when: ansible_virtualization_type != "docker"
+  notify: restart auditd
+  tags: audit
+
+- name: Configure auditd.conf space_left_action
+  lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: '^space_left_action\s*='
+    line: 'space_left_action = {{ auditd_space_left_action }}'
+    state: present
+  when: ansible_virtualization_type != "docker"
+  notify: restart auditd
+  tags: audit
+
+- name: Configure auditd.conf max_log_file_action
+  lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: '^max_log_file_action\s*='
+    line: 'max_log_file_action = {{ auditd_max_log_file_action }}'
+    state: present
+  when: ansible_virtualization_type != "docker"
+  notify: restart auditd
+  tags: audit
+
+- name: Ensure auditd is enabled and running
+  systemd:
+    name: auditd
+    enabled: yes
+    state: started
+  when: ansible_virtualization_type != "docker"
+  tags: audit
+
+- name: Generate audit rules
+  command: augenrules --load
+  changed_when: false
+  failed_when: false
+  when: ansible_virtualization_type != "docker"
+  tags: audit
+
+- name: Verify auditd status
+  command: auditctl -l
+  register: audit_rules
+  changed_when: false
+  failed_when: false
+  when: ansible_virtualization_type != "docker"
+  tags: audit
+
+- name: Display audit rules summary
+  debug:
+    msg: "{{ audit_rules.stdout_lines | default([]) | length }} audit rules loaded"
+  when:
+    - ansible_virtualization_type != "docker"
+    - audit_rules is defined
+  tags: audit
+
+- name: Docker environment - Skip auditd configuration
+  debug:
+    msg: "Skipping auditd configuration in Docker container (requires privileged mode)"
+  when: ansible_virtualization_type == "docker"
+  tags: audit

@@ -1,0 +1,70 @@
+---
+# Kernel Parameter Hardening - CIS Controls
+# Based on CIS Ubuntu 24.04 LTS Benchmark v1.0.0
+# Sections 1.5 (Process Hardening), 3.3 (Network Parameters)
+
+- name: Create CIS kernel hardening sysctl configuration
+  template:
+    src: sysctl.conf.j2
+    dest: /etc/sysctl.d/99-cis-hardening.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reload sysctl
+  tags: kernel
+
+- name: Disable uncommon filesystems (CIS 1.1.1.1-1.1.1.8)
+  blockinfile:
+    path: /etc/modprobe.d/{{ item }}.conf
+    create: yes
+    mode: '0644'
+    block: |
+      install {{ item }} /bin/true
+      blacklist {{ item }}
+  loop: "{{ disabled_filesystems }}"
+  when: ansible_virtualization_type != "docker"
+  tags: kernel
+
+- name: Disable network protocols (CIS 3.2.1-3.2.4)
+  blockinfile:
+    path: /etc/modprobe.d/{{ item }}.conf
+    create: yes
+    mode: '0644'
+    block: |
+      install {{ item }} /bin/true
+      blacklist {{ item }}
+  loop: "{{ disabled_network_protocols }}"
+  when: ansible_virtualization_type != "docker"
+  tags: kernel
+
+- name: Ensure core dumps are restricted (CIS 1.5.1)
+  pam_limits:
+    domain: '*'
+    limit_type: hard
+    limit_item: core
+    value: '0'
+  tags: kernel
+
+- name: Configure fs.suid_dumpable (CIS 1.5.1)
+  sysctl:
+    name: fs.suid_dumpable
+    value: '0'
+    state: present
+    reload: yes
+  tags: kernel
+
+- name: Verify sysctl settings applied
+  command: sysctl -a
+  register: sysctl_output
+  changed_when: false
+  failed_when: false
+  tags: kernel
+
+- name: Display critical kernel parameters
+  debug:
+    msg:
+      - "kernel.randomize_va_space = {{ sysctl_output.stdout | regex_search('kernel.randomize_va_space = ([0-9]+)', '\\1') | default(['unknown']) | first }}"
+      - "net.ipv4.ip_forward = {{ sysctl_output.stdout | regex_search('net.ipv4.ip_forward = ([0-9]+)', '\\1') | default(['unknown']) | first }}"
+      - "net.ipv4.tcp_syncookies = {{ sysctl_output.stdout | regex_search('net.ipv4.tcp_syncookies = ([0-9]+)', '\\1') | default(['unknown']) | first }}"
+  when: sysctl_output is defined
+  tags: kernel

@@ -1,0 +1,162 @@
+---
+# CIS Level 1 Hardening Playbook v3.0 (Enhanced)
+# Purpose: Apply CIS Level 1 benchmarks using v3.0 enhanced hardening script
+# Based on CIS Ubuntu Linux 24.04 LTS Benchmark v1.0.0
+# Author: sec-levels Development Team
+# Version: 3.0 (73.51% CIS Level 1 compliance target)
+
+- name: CIS Level 1 Hardening v3.0 - Ubuntu 24.04 LTS
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    script_path: "/tmp/sec-levels-harden.sh"
+    lib_path: "/tmp/sec-levels-common.sh"
+    dry_run: false
+
+  pre_tasks:
+    - name: Display target information
+      debug:
+        msg: |
+          ==========================================
+          CIS Level 1 Hardening v3.0 (Enhanced)
+          ==========================================
+          Target: {{ ansible_hostname }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Kernel: {{ ansible_kernel }}
+          Virtualization: {{ ansible_virtualization_type | default('physical') }}
+          Architecture: {{ ansible_architecture }}
+          ==========================================
+
+          v3.0 Enhancements:
+          - Package management (removed insecure clients)
+          - Time synchronization (systemd-timesyncd)
+          - GNOME desktop hardening (if applicable)
+          - Access control (cron.allow, at.allow)
+          - File permissions (cron dirs, sticky bit)
+          - Sudo security (pty, logging)
+          - Enhanced security tools (fail2ban, ClamAV, AIDE, rkhunter, Lynis, Timeshift)
+          ==========================================
+
+    - name: Verify Ubuntu 24.04
+      assert:
+        that:
+          - ansible_distribution == "Ubuntu"
+          - ansible_distribution_version == "24.04"
+        fail_msg: "This playbook requires Ubuntu 24.04 LTS"
+        success_msg: "Ubuntu 24.04 LTS detected - proceeding with hardening"
+
+    - name: Check kernel compatibility
+      debug:
+        msg: |
+          Kernel: {{ ansible_kernel }}
+          Supported: 6.8.x (GA), 6.11.x-6.20.x (HWE), x.x.x-oem (OEM)
+          Script will prompt if kernel is outside tested range
+      when: not ansible_kernel is match('^6\.(8|1[1-9]|2[0-9])\.')
+
+    - name: Copy v3.0 hardening script to target
+      copy:
+        src: "{{ playbook_dir }}/../../scripts/harden.sh"
+        dest: "{{ script_path }}"
+        mode: '0750'
+        owner: root
+        group: root
+
+    - name: Copy common library to target
+      copy:
+        src: "{{ playbook_dir }}/../../scripts/lib/common.sh"
+        dest: "{{ lib_path }}"
+        mode: '0640'
+        owner: root
+        group: root
+
+  tasks:
+    - name: Execute v3.0 CIS Level 1 hardening script
+      shell: |
+        echo "y" | {{ script_path }} level1 {{ '--dry-run' if dry_run else '' }}
+      args:
+        executable: /bin/bash
+      register: hardening_result
+      changed_when: true
+      failed_when: hardening_result.rc != 0
+
+    - name: Display hardening output
+      debug:
+        var: hardening_result.stdout_lines
+      when: hardening_result is defined
+
+  post_tasks:
+    - name: Clean up temporary scripts
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ script_path }}"
+        - "{{ lib_path }}"
+
+    - name: Display hardening summary
+      debug:
+        msg: |
+          ==========================================
+          CIS Level 1 Hardening v3.0 Complete
+          ==========================================
+          Target: {{ ansible_hostname }}
+          Timestamp: {{ ansible_date_time.iso8601 }}
+
+          v3.0 Applied Controls:
+          - Filesystem hardening (CIS 1.1.x)
+          - Kernel parameter hardening (CIS 3.x)
+          - Service management (CIS 2.x)
+          - UFW firewall (CIS 3.4.x)
+          - AppArmor enforcement (CIS 1.6.x)
+          - SSH hardening (CIS 5.3.x) - basic
+          - TLS 1.2+ enforcement
+          - Automatic security updates
+          - Package management (NEW v3.0)
+          - Time synchronization (NEW v3.0)
+          - GNOME desktop hardening (NEW v3.0)
+          - Access control (NEW v3.0)
+          - File permissions (NEW v3.0)
+          - Sudo security (NEW v3.0)
+
+          Security Tools Installed:
+          - fail2ban (SSH intrusion prevention)
+          - ClamAV (antivirus, daily scans)
+          - AIDE (file integrity monitoring)
+          - rkhunter (rootkit detection, weekly)
+          - Lynis (security auditing)
+          - Timeshift (system snapshots)
+
+          Expected Compliance: 73-75% CIS Level 1 Workstation
+          Lynis Hardening Index: 73/100
+
+          Backups: /var/backups/sec-levels/
+
+          Next Steps:
+          1. Verify SSH access (test from another session)
+          2. Review warnings in script output
+          3. Run compliance audit:
+             oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_cis_level1_workstation \\
+               --results-arf /tmp/audit-results.xml \\
+               --report /tmp/audit-report.html \\
+               /usr/share/xml/scap/ssg/content/ssg-ubuntu2404-ds.xml
+          4. Run Lynis audit: sudo lynis audit system
+          5. Consider reboot (kernel parameters require restart)
+
+          WARNINGS:
+          - SSH hardening is LIMITED (maintains remote access)
+          - IPv6 is ENABLED but hardened (for gaming/Docker)
+          - Docker bypasses UFW (verify firewall rules)
+          - Review system requirements (4GB+ RAM for ClamAV)
+          ==========================================
+      tags: always
+
+    - name: Reboot reminder
+      debug:
+        msg: |
+          ⚠️  REBOOT REQUIRED for kernel parameters to take full effect
+
+          Schedule a reboot at your convenience:
+          sudo reboot
+      tags: always

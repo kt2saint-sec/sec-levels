@@ -1,0 +1,6 @@
+---
+# Firewall Handlers
+
+- name: reload ufw
+  command: ufw reload
+  when: ansible_virtualization_type != "docker"

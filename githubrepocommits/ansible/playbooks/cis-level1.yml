@@ -1,0 +1,94 @@
+---
+# CIS Level 1 Server Hardening Playbook
+# Purpose: Apply CIS Level 1 benchmarks to Ubuntu 24.04 LTS
+# Based on CIS Ubuntu Linux 24.04 LTS Benchmark v1.0.0
+# Author: sec-levels Development Team
+
+- name: CIS Level 1 Server Hardening - Ubuntu 24.04 LTS
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  pre_tasks:
+    - name: Display target information
+      debug:
+        msg: |
+          ========================================
+          CIS Level 1 Hardening
+          ========================================
+          Target: {{ ansible_hostname }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Kernel: {{ ansible_kernel }}
+          Virtualization: {{ ansible_virtualization_type | default('physical') }}
+          Architecture: {{ ansible_architecture }}
+          ========================================
+
+    - name: Verify Ubuntu 24.04
+      assert:
+        that:
+          - ansible_distribution == "Ubuntu"
+          - ansible_distribution_version == "24.04"
+        fail_msg: "This playbook requires Ubuntu 24.04 LTS"
+        success_msg: "Ubuntu 24.04 LTS detected - proceeding with hardening"
+
+    - name: Create backup directory
+      file:
+        path: /root/sec-levels-backups
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Backup critical files before hardening
+      shell: |
+        tar -czf /root/sec-levels-backups/pre-hardening-{{ ansible_date_time.epoch }}.tar.gz \
+          /etc/ssh/sshd_config \
+          /etc/sysctl.conf \
+          /etc/sysctl.d/ \
+          /etc/audit/ 2>/dev/null || true
+      changed_when: false
+
+  roles:
+    - role: ssh-hardening
+      tags: ['ssh', 'level1']
+
+    - role: firewall
+      tags: ['firewall', 'level1']
+
+    - role: kernel-hardening
+      tags: ['kernel', 'level1']
+
+    - role: filesystem
+      tags: ['filesystem', 'level1']
+
+    - role: audit-logging
+      tags: ['audit', 'level1']
+
+  post_tasks:
+    - name: Display hardening summary
+      debug:
+        msg: |
+          ========================================
+          CIS Level 1 Hardening Complete
+          ========================================
+          Target: {{ ansible_hostname }}
+          Timestamp: {{ ansible_date_time.iso8601 }}
+
+          Applied Controls:
+          - SSH hardening (CIS 5.1)
+          - UFW firewall configuration (CIS 4)
+          - Kernel parameter hardening (CIS 1.5, 3.3)
+          - Filesystem permissions (CIS 7)
+          - Audit logging (CIS 6.2)
+
+          Backups stored in: /root/sec-levels-backups/
+
+          Next Steps:
+          1. Review configuration changes
+          2. Verify SSH access still works (test new connection)
+          3. Test critical services
+          4. Run audit script: ~/sec-levels/scripts/audit.sh level1
+          5. Review audit report in ~/sec-levels/reports/
+
+          ========================================
+      tags: always

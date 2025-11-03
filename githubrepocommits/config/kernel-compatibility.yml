@@ -1,0 +1,19 @@
+---
+# Kernel Compatibility Matrix
+# Purpose: Define kernel-specific settings and compatibility notes
+# Author: sec-levels Development Team
+
+# Implementation will be added after research phase
+
+kernels:
+  "6.8":
+    status: "tested"
+    notes: "Target kernel version for Ubuntu 24.04 LTS"
+    parameters: {}
+
+  "6.11":
+    status: "untested"
+    notes: "Latest LTS kernel - testing required"
+    parameters: {}
+
+# Kernel-specific workarounds will be documented here

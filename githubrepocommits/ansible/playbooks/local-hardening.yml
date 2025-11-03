@@ -1,0 +1,244 @@
+---
+# Local CIS Level 1 Hardening Playbook v3.0
+# Purpose: Apply v3.0 CIS hardening to localhost without inventory
+# Usage: sudo ansible-playbook local-hardening.yml
+# Author: sec-levels Development Team
+# Version: 3.0
+
+- name: Local CIS Level 1 Hardening v3.0
+  hosts: localhost
+  connection: local
+  become: yes
+  gather_facts: yes
+
+  vars:
+    script_dir: "{{ playbook_dir }}/../../scripts"
+    dry_run: false  # Set to true for dry-run testing
+    force_mode: false  # Set to true to bypass kernel compatibility prompts
+
+  pre_tasks:
+    - name: Display localhost information
+      debug:
+        msg: |
+          ==========================================
+          Local CIS Level 1 Hardening v3.0
+          ==========================================
+          Hostname: {{ ansible_hostname }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Kernel: {{ ansible_kernel }}
+          Architecture: {{ ansible_architecture }}
+          Python: {{ ansible_python_version }}
+          ==========================================
+
+          Mode: {{ 'DRY-RUN (no changes)' if dry_run else 'LIVE (will modify system)' }}
+          Force: {{ 'ENABLED (bypass prompts)' if force_mode else 'DISABLED' }}
+          ==========================================
+
+    - name: Verify running as root
+      assert:
+        that:
+          - ansible_user_id == "root" or ansible_become
+        fail_msg: "This playbook must be run with sudo or as root"
+        success_msg: "Privilege elevation confirmed"
+
+    - name: Verify Ubuntu 24.04
+      assert:
+        that:
+          - ansible_distribution == "Ubuntu"
+          - ansible_distribution_version == "24.04"
+        fail_msg: "This playbook requires Ubuntu 24.04 LTS"
+        success_msg: "Ubuntu 24.04 LTS detected"
+
+    - name: Display kernel compatibility notice
+      debug:
+        msg: |
+          Kernel: {{ ansible_kernel }}
+
+          Tested kernels: 6.8.x (GA), 6.11.x-6.14.x (HWE), x.x.x-oem
+          Your kernel: {{ 'TESTED ✓' if ansible_kernel is match('^6\.(8|1[1-4])\.\d+-\d+') else 'UNTESTED - script will prompt' }}
+
+          If your kernel is outside the tested range, the script will:
+          1. Display a warning
+          2. Prompt for confirmation (unless force_mode=true)
+          3. Proceed if you confirm
+      when: not ansible_kernel is match('^6\.(8|1[1-4])\.\d+-\d+')
+
+    - name: Confirm hardening (interactive)
+      pause:
+        prompt: |
+
+          ==========================================
+          ⚠️  SYSTEM HARDENING WARNING ⚠️
+          ==========================================
+
+          This will apply CIS Level 1 security hardening to THIS SYSTEM.
+
+          Changes include:
+          - Filesystem and kernel hardening
+          - Firewall configuration (UFW)
+          - SSH hardening (limited)
+          - Package management (remove insecure clients)
+          - Security tools installation (fail2ban, ClamAV, AIDE, etc.)
+          - System configuration changes
+
+          Backups will be created: /var/backups/sec-levels/
+
+          Expected compliance: 73-75% CIS Level 1 Workstation
+          System requirements: 4GB+ RAM, 10GB+ disk, SSD recommended
+
+          Press Ctrl+C and then 'A' to abort
+          Press Enter to continue with hardening
+      when: not force_mode and not dry_run
+
+  tasks:
+    - name: Verify hardening script exists
+      stat:
+        path: "{{ script_dir }}/harden.sh"
+      register: harden_script
+
+    - name: Fail if script not found
+      fail:
+        msg: "Hardening script not found at {{ script_dir }}/harden.sh"
+      when: not harden_script.stat.exists
+
+    - name: Verify common library exists
+      stat:
+        path: "{{ script_dir }}/lib/common.sh"
+      register: common_lib
+
+    - name: Fail if library not found
+      fail:
+        msg: "Common library not found at {{ script_dir }}/lib/common.sh"
+      when: not common_lib.stat.exists
+
+    - name: Execute v3.0 CIS Level 1 hardening script
+      shell: |
+        cd {{ script_dir }}
+        {% if force_mode %}export FORCE=true{% endif %}
+        echo "y" | bash harden.sh level1 {{ '--dry-run' if dry_run else '' }}
+      args:
+        executable: /bin/bash
+      register: hardening_result
+      changed_when: true
+      failed_when: hardening_result.rc != 0
+      environment:
+        PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+    - name: Display hardening output
+      debug:
+        var: hardening_result.stdout_lines
+      when: hardening_result is defined and hardening_result.stdout_lines is defined
+
+  post_tasks:
+    - name: Check if reboot is required
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Display completion summary
+      debug:
+        msg: |
+          ==========================================
+          Local Hardening v3.0 Complete ✓
+          ==========================================
+          Hostname: {{ ansible_hostname }}
+          Timestamp: {{ ansible_date_time.iso8601 }}
+
+          Compliance Target: 73-75% CIS Level 1 Workstation
+          Lynis Target: 73/100 hardening index
+
+          Security Tools Installed:
+          - fail2ban: SSH intrusion prevention
+          - ClamAV: Daily antivirus scans (6:25 AM)
+          - AIDE: File integrity monitoring
+          - rkhunter: Weekly rootkit detection (Sundays)
+          - Lynis: Security auditing
+          - Timeshift: System snapshots
+
+          Backups Location: /var/backups/sec-levels/
+
+          Logs:
+          - Hardening: /var/log/sec-levels/sec-levels.log
+          - ClamAV: /var/log/clamav/daily-scan.log
+          - rkhunter: /var/log/rkhunter-scan.log
+          - Lynis: /var/log/lynis-hardening-audit.log
+
+          Next Steps:
+          1. {{ 'REBOOT REQUIRED - kernel parameters need restart' if reboot_required.stat.exists else 'Reboot recommended for kernel parameters' }}
+          2. Verify SSH access (test from another terminal/session)
+          3. Run compliance audit:
+             sudo oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_cis_level1_workstation \\
+               --results-arf /tmp/audit-results.xml --report /tmp/audit-report.html \\
+               /usr/share/xml/scap/ssg/content/ssg-ubuntu2404-ds.xml
+          4. Run Lynis audit: sudo lynis audit system
+          5. Review Timeshift snapshots: sudo timeshift-gtk
+
+          IMPORTANT WARNINGS:
+          ⚠️  SSH hardening is LIMITED (maintains remote access)
+          ⚠️  IPv6 is ENABLED but hardened (for gaming/Docker)
+          ⚠️  Docker bypasses UFW (verify firewall after Docker use)
+          ⚠️  ClamAV uses 250-500 MB RAM (consider disabling on low-spec systems)
+
+          Manual configurations still needed for higher compliance:
+          - PAM password complexity (CIS 5.5.x) - adds ~10-15%
+          - Additional SSH controls (CIS 5.3.x) - requires console access
+          - Advanced file permissions (CIS 6.x) - case-by-case review
+          ==========================================
+      tags: always
+
+    - name: Display reboot reminder
+      debug:
+        msg: |
+          ==========================================
+          ⚠️  REBOOT RECOMMENDED ⚠️
+          ==========================================
+
+          Kernel parameters have been modified and require a reboot.
+
+          Reboot now:
+            sudo reboot
+
+          Or schedule for later:
+            sudo shutdown -r +60  # Reboot in 60 minutes
+            sudo shutdown -r 03:00  # Reboot at 3 AM
+          ==========================================
+      tags: always
+
+    - name: Offer automatic reboot (only if not dry-run)
+      pause:
+        prompt: |
+
+          Reboot now? (y/N)
+      register: reboot_prompt
+      when: not dry_run and (reboot_required.stat.exists or true)
+      tags: never,reboot
+
+    - name: Reboot system
+      reboot:
+        msg: "Rebooting to apply CIS hardening kernel parameters"
+        connect_timeout: 5
+        reboot_timeout: 300
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+      when: reboot_prompt is defined and reboot_prompt.user_input | lower in ['y', 'yes']
+      tags: never,reboot
+
+# Usage Examples:
+#
+# 1. Normal execution (interactive):
+#    sudo ansible-playbook local-hardening.yml
+#
+# 2. Dry-run mode (test without changes):
+#    sudo ansible-playbook local-hardening.yml -e "dry_run=true"
+#
+# 3. Force mode (bypass kernel prompts):
+#    sudo ansible-playbook local-hardening.yml -e "force_mode=true"
+#
+# 4. Both dry-run and force:
+#    sudo ansible-playbook local-hardening.yml -e "dry_run=true force_mode=true"
+#
+# 5. With automatic reboot after:
+#    sudo ansible-playbook local-hardening.yml --tags reboot
+#
+# 6. Skip specific tasks with tags:
+#    sudo ansible-playbook local-hardening.yml --skip-tags reboot

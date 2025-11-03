@@ -1,0 +1,8 @@
+---
+# Filesystem Hardening Default Variables
+# Based on CIS Ubuntu 24.04 LTS Benchmark v1.0.0
+
+# Configure /tmp as separate partition with secure mount options
+# WARNING: Only enable if you have a dedicated /tmp partition
+# In containers/VMs without separate partitions, this should be false
+configure_tmp_partition: false

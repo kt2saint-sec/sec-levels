@@ -1,0 +1,14 @@
+---
+# Custom Security Profile
+# Purpose: Define custom security controls beyond CIS benchmarks
+# Author: sec-levels Development Team
+
+# Implementation will be added after research phase
+
+profile:
+  name: "Custom Security Profile"
+  description: "Custom hardening controls"
+  level: custom
+
+controls:
+  # Custom controls can be defined here

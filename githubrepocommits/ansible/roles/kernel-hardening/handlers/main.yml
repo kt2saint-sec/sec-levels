@@ -1,0 +1,5 @@
+---
+# Kernel Hardening Handlers
+
+- name: reload sysctl
+  command: sysctl --system

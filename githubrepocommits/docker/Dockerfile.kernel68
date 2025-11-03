@@ -1,0 +1,70 @@
+# Hardened Ubuntu 24.04 test environment for CIS hardening validation
+# Kernel 6.8 compatibility target
+FROM ubuntu:24.04
+
+# Metadata
+LABEL maintainer="sec-levels@local"
+LABEL description="Hardened Ubuntu 24.04 test environment for CIS benchmark validation"
+LABEL version="1.0"
+LABEL kernel-target="6.8"
+
+# Security: Non-interactive installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Security: Update base system and install minimal required packages only
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        systemd \
+        systemd-sysv \
+        openssh-server \
+        ufw \
+        auditd \
+        apparmor \
+        apparmor-utils \
+        python3-minimal \
+        python3-pip \
+        sudo \
+        ca-certificates \
+        curl \
+        iproute2 \
+        iputils-ping \
+        procps \
+        && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Security: Create non-root user for testing
+RUN useradd -m -s /bin/bash -G sudo secuser && \
+    echo "secuser:secuser" | chpasswd && \
+    echo "secuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Security: Configure SSH for testing (will be hardened by scripts)
+RUN mkdir -p /var/run/sshd && \
+    systemctl enable ssh || true
+
+# Security: Set restrictive umask
+RUN echo "umask 027" >> /etc/profile
+
+# Security: Configure AppArmor
+RUN aa-enforce /etc/apparmor.d/* 2>/dev/null || true
+
+# Create directories for testing
+RUN mkdir -p /reports /scripts /config /ansible && \
+    chown -R secuser:secuser /reports
+
+# Security: Add health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD systemctl is-active ssh || exit 1
+
+# Volumes for test data
+VOLUME ["/reports", "/scripts", "/config", "/ansible"]
+
+# Working directory
+WORKDIR /home/secuser
+
+# Security: Run as non-root user by default (tests can sudo)
+USER secuser
+
+# Systemd init
+CMD ["/lib/systemd/systemd"]

@@ -1,0 +1,26 @@
+---
+# Kernel Hardening Default Variables
+# Based on CIS Ubuntu 24.04 LTS Benchmark v1.0.0
+
+# Filesystem modules to disable (CIS 1.1.1.1-1.1.1.8)
+# WARNING: overlayfs breaks Docker, squashfs breaks Snap
+disabled_filesystems:
+  - cramfs      # Compressed ROM filesystem
+  - freevxfs    # Legacy Veritas filesystem
+  - jffs2       # Journalling Flash File System
+  - hfs         # Apple HFS
+  - hfsplus     # Apple HFS+
+  # - squashfs  # COMMENTED: Required by Snap packages
+  # - overlayfs # COMMENTED: Required by Docker
+  # - udf       # COMMENTED: Required on Azure VMs
+
+# Network protocols to disable (CIS 3.2.1-3.2.4)
+disabled_network_protocols:
+  - dccp        # Datagram Congestion Control Protocol
+  - sctp        # Stream Control Transmission Protocol
+  - rds         # Reliable Datagram Sockets
+  - tipc        # Transparent Inter-Process Communication
+
+# Advanced kernel hardening options
+kernel_kexec_disabled: 0      # Set to 1 to disable kexec (prevents kernel replacement)
+kernel_bpf_jit_harden: 2      # BPF JIT hardening (0=disabled, 1=for unprivileged, 2=always)

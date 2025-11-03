@@ -1,0 +1,174 @@
+# Logs
+*.log
+*.swp
+*.swo
+*~
+
+# Virtual environments
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Reports (may contain sensitive data)
+reports/*.html
+reports/*.xml
+reports/*.json
+!reports/samples/
+
+# Secrets
+*.key
+*.pem
+*.crt
+secrets/
+.env
+.env.local
+
+# Backups
+backups/
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Ansible
+*.retry
+.ansible/
+
+# Docker
+.dockerignore
+
+# Test artifacts
+test-results/
+coverage/
+
+# === Enhanced Security Patterns (Added 2025-11-03) ===
+# Comprehensive security coverage for credentials, keys, and sensitive data
+
+# SSH Keys (comprehensive coverage)
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+id_ecdsa
+id_ecdsa.pub
+id_dsa
+id_dsa.pub
+authorized_keys
+known_hosts
+*.ppk
+
+# Cloud Provider Credentials
+credentials.json
+service-account*.json
+*-key.json
+gcloud-service-key.json
+aws-credentials.conf
+azure-credentials.conf
+
+# Terraform State Files
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+terraform.tfvars
+terraform.tfvars.json
+.terraform/
+.terraform.lock.hcl
+
+# Infrastructure as Code Secrets
+*.auto.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ansible Vault & Secrets
+vault-password.txt
+.vault-pass
+*.vault
+group_vars/*/vault.yml
+host_vars/*/vault.yml
+
+# VM Images and Snapshots
+*.qcow2
+*.vmdk
+*.vdi
+*.ova
+*.ovf
+*.img
+*.vhd
+*.vhdx
+
+# Test Artifacts (additional)
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+nosetests.xml
+.tox/
+.hypothesis/
+
+# Audit Reports (may contain sensitive hostnames/IPs)
+audit-*.log
+audit-report-*.html
+lynis-report.dat
+rkhunter.log
+aide.log
+
+# Environment-Specific Files
+.env.*
+*.local
+local.yml
+development.yml
+production.yml
+staging.yml
+
+# Database Dumps
+*.sql
+*.sqlite
+*.db
+*.dump
+
+# CI/CD Secrets
+.gitlab-ci-local
+.travis.yml.local
+
+# Editor Backup Files (comprehensive)
+.netrwhist
+Session.vim
+.*.sw?
+
+# Additional OS-Specific
+.AppleDouble
+.LSOverride
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.directory
+.Trash-*
+.nfs*
+desktop.ini
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+$RECYCLE.BIN/
+
+# JetBrains IDEs (extended)
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
