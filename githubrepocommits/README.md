@@ -33,11 +33,74 @@ The systematic development methodology is documented in [docs/development/](docs
 
 ## 📋 Project Overview
 
-**Purpose:** Demonstrate hands-on security hardening skills for CompTIA Security+ certification and professional portfolio
+### What This Does
 
-**CIS Benchmark:** Ubuntu 24.04 LTS v1.0.0 | **Coverage:** 93.6% (280/313 automated controls)
+**sec-levels** is an enterprise-grade security automation framework that hardens Ubuntu 24.04 LTS systems against modern cyber threats by implementing CIS (Center for Internet Security) Benchmark controls. The toolkit automates the configuration of 280+ security controls across system hardening, access control, network security, and compliance monitoring—reducing manual configuration time from days to approximately **20 minutes** of automated deployment.
 
-**Tech Stack:** Bash + Ansible + OpenSCAP + Docker + Python
+The framework combines multiple approaches:
+- **Bash scripts** for standalone hardening with integrated security tools (fail2ban, ClamAV, AIDE, rkhunter, Lynis)
+- **Ansible playbooks** for fleet-wide deployment and configuration management
+- **Docker test environments** for safe validation before production deployment
+- **Comprehensive audit tools** for continuous compliance verification and reporting
+
+**Security Coverage:** 93.6% of CIS Ubuntu 24.04 LTS v1.0.0 Benchmark (280/313 automated controls)
+
+### Ideal Users
+
+This toolkit is designed for:
+
+**Security Professionals & Students**
+- SOC analysts learning Linux hardening fundamentals
+- CompTIA Security+, CISSP, or OSCP certification candidates
+- DevSecOps engineers implementing infrastructure security
+- Security researchers testing hardening effectiveness
+
+**System Administrators**
+- IT teams managing Ubuntu server fleets
+- Cloud infrastructure administrators (AWS EC2, Azure VMs, GCP Compute)
+- Organizations requiring CIS compliance (PCI-DSS, HIPAA, NIST 800-53)
+- DevOps teams integrating security into CI/CD pipelines
+
+**Academic & Training**
+- Cybersecurity bootcamp instructors
+- University-level security courses
+- CTF competition infrastructure hardening
+- Home lab security enthusiasts
+
+### Minimum Hardware Requirements
+
+**For Full Feature Set (Bash Scripts + Ansible + Docker Testing):**
+- **CPU:** 4 cores (Intel i5/AMD Ryzen 5 or better)
+- **RAM:** 8 GB (16 GB recommended for Docker environments)
+- **Storage:** 40 GB available disk space
+  - 20 GB for base Ubuntu 24.04 LTS installation
+  - 10 GB for security tools (ClamAV signatures, AIDE database, logs)
+  - 10 GB for Docker containers and test environments
+- **Network:** Internet connection for package installation and signature updates
+
+**For Basic Hardening (Bash Scripts Only):**
+- **CPU:** 2 cores
+- **RAM:** 4 GB
+- **Storage:** 25 GB
+- **Network:** Internet connection for initial setup
+
+**Tested Configurations:**
+- ✅ Ubuntu 24.04 LTS Desktop (GNOME)
+- ✅ Ubuntu 24.04 LTS Server (minimal)
+- ✅ Kernel versions: 6.8.x (GA), 6.11.x, 6.14.x (HWE)
+- ✅ Cloud instances: AWS t3.medium, Azure Standard_B2s, GCP n1-standard-2
+- ✅ AMD GPU workstations (ROCm 7.0.2 compatible)
+
+### Deployment Time
+
+**Automated Setup:** ~20 minutes (end-to-end)
+- Initial setup: 5 minutes (clone repo, configure profiles)
+- Hardening execution: 10-12 minutes (depends on system speed)
+- Post-hardening validation: 3-5 minutes (audit scans, report generation)
+
+**Manual CIS implementation equivalent:** 8-16 hours (error-prone)
+
+**Initial AIDE scan:** 20-60 minutes (one-time, post-hardening)
 
 ---
 
